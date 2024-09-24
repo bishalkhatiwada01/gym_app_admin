@@ -11,93 +11,99 @@ class UserPage extends ConsumerWidget {
     final usersAsyncValue = ref.watch(userListProvider);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200.0,
-            floating: false,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                'User List',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  shadows: [
-                    Shadow(
-                        color: Colors.black.withOpacity(0.3),
-                        offset: Offset(0, 2),
-                        blurRadius: 4)
-                  ],
-                ),
-              ),
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue.shade700, Colors.blue.shade900],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.refresh(userListProvider);
+        },
+        child: Container(
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200.0,
+                floating: false,
+                pinned: true,
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'User List',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      shadows: [
+                        Shadow(
+                            color: Colors.black.withOpacity(0.3),
+                            offset: const Offset(0, 2),
+                            blurRadius: 4)
+                      ],
+                    ),
+                  ),
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.blue.shade700, Colors.blue.shade900],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(Icons.group,
+                          size: 80, color: Colors.white.withOpacity(0.7)),
+                    ),
                   ),
                 ),
-                child: Center(
-                  child: Icon(Icons.group,
-                      size: 80, color: Colors.white.withOpacity(0.7)),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Manage your gym members',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade700),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'Manage your gym members',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            sliver: usersAsyncValue.when(
-              loading: () => SliverToBoxAdapter(
-                  child: Center(child: CircularProgressIndicator())),
-              error: (error, stack) => SliverToBoxAdapter(
-                  child: Center(child: Text('Error: $error'))),
-              data: (users) {
-                if (users.isEmpty) {
-                  return SliverToBoxAdapter(
-                      child: Center(child: Text('No users available.')));
-                }
-                return SliverAnimatedList(
-                  initialItemCount: users.length,
-                  itemBuilder: (context, index, animation) {
-                    User user = users[index];
-                    return AnimationConfiguration.staggeredList(
-                      position: index,
-                      duration: const Duration(milliseconds: 375),
-                      child: SlideAnimation(
-                        verticalOffset: 50.0,
-                        child: FadeInAnimation(
-                          child: _buildUserCard(context, user),
-                        ),
-                      ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: usersAsyncValue.when(
+                  loading: () => const SliverToBoxAdapter(
+                      child: Center(child: CircularProgressIndicator())),
+                  error: (error, stack) => SliverToBoxAdapter(
+                      child: Center(child: Text('Error: $error'))),
+                  data: (users) {
+                    if (users.isEmpty) {
+                      return const SliverToBoxAdapter(
+                          child: Center(child: Text('No users available.')));
+                    }
+                    return SliverAnimatedList(
+                      initialItemCount: users.length,
+                      itemBuilder: (context, index, animation) {
+                        if (index < users.length) {
+                          // Safety check to prevent out-of-bounds access
+                          User user = users[index];
+                          return AnimationConfiguration.staggeredList(
+                            position: index,
+                            duration: const Duration(milliseconds: 375),
+                            child: SlideAnimation(
+                              verticalOffset: 50.0,
+                              child: FadeInAnimation(
+                                child: _buildUserCard(context, user),
+                              ),
+                            ),
+                          );
+                        } else {
+                          // Return an empty widget if index is out of bounds
+                          return SizedBox.shrink();
+                        }
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement add new user functionality
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blue.shade700,
+        ),
       ),
     );
   }
@@ -106,7 +112,7 @@ class UserPage extends ConsumerWidget {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -116,7 +122,7 @@ class UserPage extends ConsumerWidget {
           );
         },
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               Hero(
@@ -133,17 +139,17 @@ class UserPage extends ConsumerWidget {
                   ),
                 ),
               ),
-              SizedBox(width: 16),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       user.name.isNotEmpty ? user.name : 'Unknown',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       user.email,
                       style: TextStyle(color: Colors.grey.shade600),

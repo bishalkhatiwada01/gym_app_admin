@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gymappadmin/features/payments/payment_model.dart';
 import 'package:gymappadmin/features/payments/payment_service.dart';
+import 'package:gymappadmin/features/users/user_service/user_service.dart';
 import 'package:intl/intl.dart';
 
 class UserProfilePage extends ConsumerWidget {
@@ -46,19 +47,20 @@ class UserProfilePage extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildInfoCard(context),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Text(
                     'Payment History',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   paymentHistoryAsyncValue.when(
-                    loading: () => Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => Center(
                       child: Text('Error loading payments: $error'),
                     ),
@@ -70,6 +72,8 @@ class UserProfilePage extends ConsumerWidget {
                       return _buildPaymentHistoryList(context, userPayments);
                     },
                   ),
+                  const SizedBox(height: 20),
+                  _buildDeleteUserButton(context, ref),
                 ],
               ),
             ),
@@ -79,12 +83,66 @@ class UserProfilePage extends ConsumerWidget {
     );
   }
 
+  // Delete user button with confirmation dialog
+  Widget _buildDeleteUserButton(BuildContext context, WidgetRef ref) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: Colors.red,
+      ),
+      onPressed: () async {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Delete User'),
+              content: const Text('Are you sure you want to delete this user?'),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                    ref.refresh(userListProvider);
+                  },
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          // Trigger user deletion using the deleteUserProvider
+          final result = ref.read(deleteUserProvider(user.id));
+          result.when(
+            error: (error, stack) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error deleting user: $error')),
+              );
+            },
+            loading: () => const CircularProgressIndicator(),
+            data: (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User successfully deleted')),
+              );
+              Navigator.of(context).pop(); // Navigate back after deleting
+            },
+          );
+        }
+      },
+      child: const Text('Delete User'),
+    );
+  }
+
   Widget _buildInfoCard(BuildContext context) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -92,9 +150,9 @@ class UserProfilePage extends ConsumerWidget {
               'User Information',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             _buildInfoRow(context, Icons.email, 'Email', user.email),
-            Divider(),
+            const Divider(),
             _buildInfoRow(context, Icons.fingerprint, 'User ID', user.id),
           ],
         ),
@@ -105,11 +163,11 @@ class UserProfilePage extends ConsumerWidget {
   Widget _buildInfoRow(
       BuildContext context, IconData icon, String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Icon(icon, color: Colors.blue.shade700),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +176,7 @@ class UserProfilePage extends ConsumerWidget {
                     style: TextStyle(
                         fontWeight: FontWeight.w500,
                         color: Colors.grey.shade600)),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(value, style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
@@ -134,7 +192,7 @@ class UserProfilePage extends ConsumerWidget {
       return Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
+        child: const Padding(
           padding: EdgeInsets.all(16),
           child: Center(child: Text('No payment history available.')),
         ),
@@ -143,23 +201,23 @@ class UserProfilePage extends ConsumerWidget {
 
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: userPayments.length,
       itemBuilder: (context, index) {
         final payment = userPayments[index]['payment'] as Payment;
         return Card(
           elevation: 2,
-          margin: EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(vertical: 8),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
-            leading: CircleAvatar(
+            leading: const CircleAvatar(
               backgroundColor: Colors.green,
               child: Icon(Icons.attach_money, color: Colors.white),
             ),
             title: Text('\$${payment.amount.toStringAsFixed(2)}'),
             subtitle: Text(_formatDate(payment.paymentDate)),
-            trailing: Icon(Icons.chevron_right),
+            trailing: const Icon(Icons.chevron_right),
           ),
         );
       },
